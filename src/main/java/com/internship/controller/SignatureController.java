@@ -1,33 +1,29 @@
 package com.internship.controller;
 
+import com.internship.service.SignValidationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.cert.X509Certificate;
 
 @RestController
 public class SignatureController {
+
+    @Autowired
+    private SignValidationService validationService;
 
     @PreAuthorize("hasAuthority('ROLE_USER')")
     @PostMapping("/signature")
     public String checkForValidSignature(@RequestBody String message, @RequestHeader("sign") byte[] signature, HttpServletRequest servletRequest) throws Exception {
 
-        X509Certificate[] cert = (X509Certificate[]) servletRequest.getAttribute("javax.servlet.request.X509Certificate");
-
-        Key publicKey = cert[0].getPublicKey();
-        Signature sig = Signature.getInstance(cert[0].getSigAlgName());
-
-        sig.initVerify((PublicKey) publicKey);
-        sig.update(message.getBytes());
-
-        if (sig.verify(signature)){
-            return "All is ok!";
+        if (validationService.signatureValidation(message, signature/*, servletRequest*/)){
+            return "Signature is valid";
         }else {
-            return "Bad request";
+            return "Signature is not valid";
         }
     }
 }
